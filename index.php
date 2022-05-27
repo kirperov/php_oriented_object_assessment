@@ -41,30 +41,34 @@ class Lobby
     }
 }
 
-abstract class InitPlayer {
+abstract class AbstractPlayer
+{
     public function __construct(public string $name = 'anonymous', public float $ratio = 400.0)
     {
     }
 
     abstract public function getName(): string;
+
     abstract public function getRatio(): float;
+
     abstract protected function probabilityAgainst(self $player): float;
+
     abstract public function updateRatioAgainst(self $player, int $result): void;
 }
 
-class Player extends InitPlayer
+class Player extends AbstractPlayer
 {
     public function getName(): string
     {
         return $this->name;
     }
 
-    protected function probabilityAgainst(InitPlayer $player): float
+    protected function probabilityAgainst(AbstractPlayer $player): float
     {
         return 1 / (1 + (10 ** (($player->getRatio() - $this->getRatio()) / 400)));
     }
 
-    public function updateRatioAgainst(InitPlayer $player, int $result): void
+    public function updateRatioAgainst(AbstractPlayer $player, int $result): void
     {
         $this->ratio += 32 * ($result - $this->probabilityAgainst($player));
     }
@@ -73,20 +77,18 @@ class Player extends InitPlayer
     {
         return $this->ratio;
     }
-
-
 }
 
-final class QueuingPlayer extends Player 
+class QueuingPlayer extends Player
 {
-
-    public function __construct(InitPlayer $player, protected int $rang = 1)
+    public function __construct(AbstractPlayer $player, protected int $range = 1)
     {
-       parent::__construct($player->getName(), $player->getRatio()); 
+        parent::__construct($player->getName(), $player->getRatio());
     }
 
-    public function getRange(): int {
-        return $this->rang;
+    public function getRange(): int
+    {
+        return $this->range;
     }
 
     public function upgradeRange(): void
@@ -94,9 +96,22 @@ final class QueuingPlayer extends Player
         $this->range = min($this->range + 1, 40);
     }
 }
+class BlitzPlayer extends Player
+{
+    public function __construct(public string $name = 'anonymous', public float $ratio = 1200.0)
+    {
+        parent::__construct($name, $ratio);
+    }
 
-$greg = new Player('greg');
-$jade = new Player('jade');
+    public function updateRatioAgainst(AbstractPlayer $player, int $result): void
+    {
+        $this->ratio += 128 * ($result - $this->probabilityAgainst($player));
+    }
+}
+
+$greg = new BlitzPlayer('greg');
+$jade = new BlitzPlayer('jade');
+
 
 $lobby = new Lobby();
 $lobby->addPlayers($greg, $jade);
